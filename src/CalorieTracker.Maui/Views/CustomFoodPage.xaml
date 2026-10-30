@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CalorieTracker.Maui.ViewModels"
+             x:Class="CalorieTracker.Maui.Views.CustomFoodPage"
+             x:DataType="vm:CustomFoodViewModel"
+             Style="{StaticResource PageBackground}"
+             Title="Нова храна">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout>
+                    <Label Text="Име *" Style="{StaticResource FieldLabel}" />
+                    <Entry Text="{Binding Name}" Placeholder="напр. Домашна мусака" />
+                    <Label Text="Марка" Style="{StaticResource FieldLabel}" />
+                    <Entry Text="{Binding Brand}" />
+                    <Label Text="Баркод" Style="{StaticResource FieldLabel}" />
+                    <Entry Text="{Binding Barcode}" Keyboard="Numeric" />
+                    <Label Text="Типична порция (g)" Style="{StaticResource FieldLabel}" />
+                    <Entry Text="{Binding Serving}" Keyboard="Numeric" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout>
+                    <Label Text="Хранителни стойности на 100 g" Style="{StaticResource SectionTitle}" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout>
+                            <Label Text="Калории (kcal) *" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Calories}" Keyboard="Numeric" />
+                            <Label Text="Въглехидрати (g) *" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Carbs}" Keyboard="Numeric" />
+                            <Label Text="Фибри (g)" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Fiber}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Белтъчини (g) *" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Protein}" Keyboard="Numeric" />
+                            <Label Text="Мазнини (g) *" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Fat}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Запази храната" Command="{Binding SaveCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Core + API тестове
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 11.0.x
+          dotnet-quality: preview
+
+      - name: Build API
+        run: dotnet build src/CalorieTracker.Api -c Release
+
+      - name: Test
+        run: dotnet test tests/CalorieTracker.Tests -c Release --logger "console;verbosity=normal"
+
+  android:
+    name: MAUI Android build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 11.0.x
+          dotnet-quality: preview
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui-android
+
+      - name: Build Android
+        run: dotnet build src/CalorieTracker.Maui -f net11.0-android -c Release

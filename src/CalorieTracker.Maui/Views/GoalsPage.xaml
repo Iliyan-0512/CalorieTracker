@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CalorieTracker.Maui.ViewModels"
+             x:Class="CalorieTracker.Maui.Views.GoalsPage"
+             x:DataType="vm:GoalsViewModel"
+             Style="{StaticResource PageBackground}"
+             Title="Цели">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <!-- Изчислени цели -->
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                    <Label Text="Дневна цел" Style="{StaticResource SectionTitle}" />
+                    <Label Grid.Column="1" Text="{Binding TargetText}" Style="{StaticResource SectionTitle}"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                    <Label Grid.Row="1" Text="Макроси" Style="{StaticResource Caption}" />
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding MacrosText}" Style="{StaticResource Caption}" />
+                    <Label Grid.Row="2" Text="Базов метаболизъм (BMR)" Style="{StaticResource Caption}" />
+                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding BmrText}" Style="{StaticResource Caption}" />
+                    <Label Grid.Row="3" Text="Дневен разход (TDEE)" Style="{StaticResource Caption}" />
+                    <Label Grid.Row="3" Grid.Column="1" Text="{Binding TdeeText}" Style="{StaticResource Caption}" />
+                    <Label Grid.Row="4" Grid.ColumnSpan="2" Text="{Binding ValidationText}" FontSize="13"
+                           TextColor="{AppThemeBinding Light={StaticResource Danger}, Dark={StaticResource DangerDark}}" />
+                </Grid>
+            </Border>
+
+            <!-- Профил -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout>
+                    <Label Text="Профил" Style="{StaticResource SectionTitle}" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout>
+                            <Label Text="Пол" Style="{StaticResource FieldLabel}" />
+                            <Picker ItemsSource="{Binding Sexes}" SelectedIndex="{Binding SexIndex}" />
+                            <Label Text="Ръст (cm)" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Height}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Възраст" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Age}" Keyboard="Numeric" />
+                            <Label Text="Тегло (kg)" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding Weight}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <Label Text="Активност" Style="{StaticResource FieldLabel}" />
+                    <Picker ItemsSource="{Binding ActivityLevels}" SelectedIndex="{Binding ActivityIndex}" />
+                    <Label Text="Цел" Style="{StaticResource FieldLabel}" />
+                    <Picker ItemsSource="{Binding Goals}" SelectedIndex="{Binding GoalIndex}" />
+                    <Label Text="Ръчна цел за калории (по избор)" Style="{StaticResource FieldLabel}" />
+                    <Entry Text="{Binding CalorieOverride}" Keyboard="Numeric" Placeholder="автоматично" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Макроси -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout>
+                    <Label Text="Разпределение на макросите (%)" Style="{StaticResource SectionTitle}" />
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <VerticalStackLayout>
+                            <Label Text="Въглехидрати" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding CarbsPercent}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1">
+                            <Label Text="Белтъчини" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding ProteinPercent}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2">
+                            <Label Text="Мазнини" Style="{StaticResource FieldLabel}" />
+                            <Entry Text="{Binding FatPercent}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Запази целите" Command="{Binding SaveCommand}" />
+
+            <!-- Тема -->
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="Тема" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                    <Picker Grid.Column="1" ItemsSource="{Binding Themes}" SelectedIndex="{Binding ThemeIndex}" WidthRequest="140" />
+                </Grid>
+            </Border>
+
+            <Label Text="Всички данни се пазят само на това устройство."
+                   Style="{StaticResource Caption}" HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CalorieTracker.Maui.ViewModels"
+             x:Class="CalorieTracker.Maui.Views.ProgressPage"
+             x:DataType="vm:ProgressViewModel"
+             Style="{StaticResource PageBackground}"
+             Title="Прогрес">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="Период" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                <Picker Grid.Column="1" ItemsSource="{Binding Periods}" SelectedIndex="{Binding PeriodIndex}" WidthRequest="120" />
+            </Grid>
+
+            <!-- Обобщение -->
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" RowSpacing="12">
+                    <VerticalStackLayout>
+                        <Label Text="{Binding AverageText}" Style="{StaticResource SectionTitle}" />
+                        <Label Text="средно на ден" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1">
+                        <Label Text="{Binding DaysLoggedText}" Style="{StaticResource SectionTitle}" />
+                        <Label Text="дни със записи" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Row="1">
+                        <Label Text="{Binding OnTargetText}" Style="{StaticResource SectionTitle}" />
+                        <Label Text="в целта (±10%)" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="1">
+                        <Label Text="{Binding WeightChangeText}" Style="{StaticResource SectionTitle}" />
+                        <Label Text="промяна в теглото" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <!-- Калории по дни -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Калории по дни" Style="{StaticResource SectionTitle}" />
+                    <GraphicsView x:Name="CaloriesView" Drawable="{Binding CaloriesChart}" HeightRequest="200" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Тегло -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Тегло" Style="{StaticResource SectionTitle}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Entry Placeholder="Днешно тегло (kg)" Keyboard="Numeric" Text="{Binding WeightInput}"
+                               ReturnCommand="{Binding LogWeightCommand}" />
+                        <Button Grid.Column="1" Text="Запиши" Command="{Binding LogWeightCommand}" />
+                    </Grid>
+                    <GraphicsView x:Name="WeightView" Drawable="{Binding WeightChart}" HeightRequest="200" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

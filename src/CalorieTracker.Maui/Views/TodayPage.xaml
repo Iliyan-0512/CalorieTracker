@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CalorieTracker.Maui.ViewModels"
+             x:Class="CalorieTracker.Maui.Views.TodayPage"
+             x:DataType="vm:DiaryViewModel"
+             Style="{StaticResource PageBackground}"
+             Title="Дневник">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="16,12,16,96" Spacing="14">
+
+                <!-- Навигация по дни -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Button Text="‹" FontSize="22" WidthRequest="48" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding PreviousDayCommand}" SemanticProperties.Description="Предишен ден" />
+                    <Label Grid.Column="1" Text="{Binding DateTitle}" Style="{StaticResource SectionTitle}"
+                           HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TodayCommand}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                    <Button Grid.Column="2" Text="›" FontSize="22" WidthRequest="48" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding NextDayCommand}" SemanticProperties.Description="Следващ ден" />
+                </Grid>
+
+                <!-- Калории -->
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,*,*">
+                            <VerticalStackLayout>
+                                <Label Text="{Binding ConsumedText}" Style="{StaticResource BigNumber}" />
+                                <Label Text="изядени" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1">
+                                <Label Text="{Binding TargetText}" Style="{StaticResource BigNumber}" />
+                                <Label Text="цел (kcal)" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2">
+                                <Label Text="{Binding RemainingText}" Style="{StaticResource BigNumber}">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsOverTarget}" Value="True">
+                                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Danger}, Dark={StaticResource DangerDark}}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                                <Label Text="{Binding RemainingLabel}" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Grid>
+                        <ProgressBar Progress="{Binding CalorieProgress}" HeightRequest="10" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Макроси -->
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Macros}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MacroProgress">
+                                <VerticalStackLayout Spacing="2">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding Name}" FontSize="14" />
+                                        <Label Grid.Column="1" Text="{Binding Text}" Style="{StaticResource Caption}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsOver}" Value="True">
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Danger}, Dark={StaticResource DangerDark}}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Grid>
+                                    <ProgressBar Progress="{Binding Progress}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Хранения -->
+                <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Meals}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MealSection">
+                            <Border Style="{StaticResource Card}" Padding="16,12">
+                                <VerticalStackLayout Spacing="6">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                        <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding Kcal}" Style="{StaticResource Caption}" VerticalOptions="Center" />
+                                        <Button Grid.Column="2" Text="+" FontSize="18" Padding="0" WidthRequest="40" HeightRequest="40"
+                                                CornerRadius="20"
+                                                Command="{Binding AddFoodCommand, Source={RelativeSource AncestorType={x:Type vm:DiaryViewModel}}, x:DataType=vm:DiaryViewModel}"
+                                                CommandParameter="{Binding MealType}"
+                                                SemanticProperties.Description="Добави храна" />
+                                    </Grid>
+
+                                    <Label Text="Няма добавени храни" Style="{StaticResource Caption}" IsVisible="{Binding IsEmpty}" />
+
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Entries}" Spacing="4">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:EntryItem">
+                                                <SwipeView>
+                                                    <SwipeView.RightItems>
+                                                        <SwipeItems Mode="Execute">
+                                                            <SwipeItem Text="Изтрий" BackgroundColor="{StaticResource Danger}"
+                                                                       Command="{Binding DeleteEntryCommand, Source={RelativeSource AncestorType={x:Type vm:DiaryViewModel}}, x:DataType=vm:DiaryViewModel}"
+                                                                       CommandParameter="{Binding .}" />
+                                                        </SwipeItems>
+                                                    </SwipeView.RightItems>
+                                                    <Grid ColumnDefinitions="*,Auto" Padding="0,6"
+                                                          BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                                                        <Grid.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Command="{Binding EditEntryCommand, Source={RelativeSource AncestorType={x:Type vm:DiaryViewModel}}, x:DataType=vm:DiaryViewModel}"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Grid.GestureRecognizers>
+                                                        <VerticalStackLayout>
+                                                            <Label Text="{Binding Name}" FontSize="15" />
+                                                            <Label Text="{Binding Details}" Style="{StaticResource Caption}" />
+                                                        </VerticalStackLayout>
+                                                        <Label Grid.Column="1" Text="{Binding Kcal}" VerticalOptions="Center" FontSize="14" />
+                                                    </Grid>
+                                                </SwipeView>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <Label Text="Докоснете храна, за да промените количеството. Плъзнете наляво, за да я изтриете."
+                       Style="{StaticResource Caption}" HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Бутон за бързо добавяне -->
+        <Button Text="+" FontSize="30" Padding="0" WidthRequest="60" HeightRequest="60" CornerRadius="30"
+                HorizontalOptions="End" VerticalOptions="End" Margin="20"
+                Command="{Binding QuickAddCommand}"
+                SemanticProperties.Description="Добави храна" />
+    </Grid>
+</ContentPage>

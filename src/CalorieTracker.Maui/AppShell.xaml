@@ -1,0 +1,15 @@
+<Shell
+    x:Class="CalorieTracker.Maui.AppShell"
+    xmlns:views="clr-namespace:CalorieTracker.Maui.Views"
+    Title="CalorieTracker">
+
+    <TabBar>
+        <ShellContent Title="Дневник" Icon="tab_diary.png"
+                      ContentTemplate="{DataTemplate views:TodayPage}" Route="today" />
+        <ShellContent Title="Прогрес" Icon="tab_progress.png"
+                      ContentTemplate="{DataTemplate views:ProgressPage}" Route="progress" />
+        <ShellContent Title="Цели" Icon="tab_goals.png"
+                      ContentTemplate="{DataTemplate views:GoalsPage}" Route="goals" />
+    </TabBar>
+
+</Shell>

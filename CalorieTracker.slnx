@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CalorieTracker.Api/CalorieTracker.Api.csproj" />
+    <Project Path="src/CalorieTracker.Core/CalorieTracker.Core.csproj" />
+    <Project Path="src/CalorieTracker.Maui/CalorieTracker.Maui.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CalorieTracker.Tests/CalorieTracker.Tests.csproj" />
+  </Folder>
+</Solution>

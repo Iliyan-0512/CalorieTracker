@@ -1,0 +1,57 @@
+﻿<Application xmlns:local="clr-namespace:CalorieTracker.Maui"
+             x:Class="CalorieTracker.Maui.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Color x:Key="Danger">#D84343</Color>
+            <Color x:Key="DangerDark">#FF8A80</Color>
+
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+                <Setter Property="StrokeThickness" Value="0" />
+                <Setter Property="Padding" Value="16" />
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}" />
+                <Setter Property="Shadow">
+                    <Setter.Value>
+                        <Shadow Brush="Black" Opacity="0.08" Radius="10" Offset="0,2" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="PageBackground" TargetType="ContentPage">
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F4F6F5, Dark={StaticResource OffBlack}}" />
+            </Style>
+
+            <Style x:Key="SectionTitle" TargetType="Label">
+                <Setter Property="FontFamily" Value="OpenSansSemibold" />
+                <Setter Property="FontSize" Value="17" />
+            </Style>
+
+            <Style x:Key="Caption" TargetType="Label">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+            </Style>
+
+            <Style x:Key="BigNumber" TargetType="Label">
+                <Setter Property="FontFamily" Value="OpenSansSemibold" />
+                <Setter Property="FontSize" Value="26" />
+                <Setter Property="HorizontalTextAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="FieldLabel" TargetType="Label">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Margin" Value="0,8,0,0" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+            </Style>
+
+            <Style x:Key="SecondaryButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Gray600}}" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Tertiary}, Dark={StaticResource White}}" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

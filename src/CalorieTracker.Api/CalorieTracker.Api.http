@@ -1,0 +1,68 @@
+@host = http://localhost:5080
+
+GET {{host}}/health
+
+###
+GET {{host}}/api/foods?search=мляко
+
+###
+GET {{host}}/api/foods/barcode/3017620422003
+
+###
+POST {{host}}/api/foods
+Content-Type: application/json
+
+{
+  "name": "Домашна мусака",
+  "calories": 180,
+  "protein": 9,
+  "carbs": 12,
+  "fat": 10,
+  "fiber": 1.5,
+  "defaultServingGrams": 300
+}
+
+###
+POST {{host}}/api/meals
+Content-Type: application/json
+
+{
+  "date": "2026-10-30",
+  "mealType": "Breakfast",
+  "foodId": 4,
+  "grams": 60
+}
+
+###
+GET {{host}}/api/meals?date=2026-10-30
+
+###
+PUT {{host}}/api/profile
+Content-Type: application/json
+
+{
+  "sex": "Male",
+  "age": 28,
+  "heightCm": 180,
+  "weightKg": 82,
+  "activityLevel": "Moderate",
+  "goal": "Lose",
+  "carbsPercent": 40,
+  "proteinPercent": 35,
+  "fatPercent": 25
+}
+
+###
+GET {{host}}/api/profile/targets
+
+###
+POST {{host}}/api/weights
+Content-Type: application/json
+
+{
+  "date": "2026-10-30",
+  "weightKg": 81.6
+}
+
+###
+GET {{host}}/api/stats?days=7
