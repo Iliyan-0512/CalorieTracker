@@ -7,7 +7,10 @@ namespace CalorieTracker.Core.Services;
 public record NewFood(string Name, string? Brand, string? Barcode, double Calories, double Protein, double Carbs,
     double Fat, double Fiber, double DefaultServingGrams = 100);
 
-public class FoodService(CalorieDbContext db, IBarcodeLookup? barcodeLookup = null)
+public class FoodService(
+    CalorieDbContext db,
+    IBarcodeLookup? barcodeLookup = null,
+    IEnumerable<IOnlineFoodSearch>? onlineSearches = null)
 {
     public async Task<IReadOnlyList<Food>> SearchAsync(string? query, int limit = 50, CancellationToken ct = default)
     {
@@ -52,23 +55,92 @@ public class FoodService(CalorieDbContext db, IBarcodeLookup? barcodeLookup = nu
     {
         Validate(input);
 
-        var food = new Food
-        {
-            Name = input.Name.Trim(),
-            Brand = string.IsNullOrWhiteSpace(input.Brand) ? null : input.Brand.Trim(),
-            Barcode = string.IsNullOrWhiteSpace(input.Barcode) ? null : input.Barcode.Trim(),
-            Calories = input.Calories,
-            Protein = input.Protein,
-            Carbs = input.Carbs,
-            Fat = input.Fat,
-            Fiber = input.Fiber,
-            DefaultServingGrams = input.DefaultServingGrams,
-            Source = FoodSource.Custom
-        };
+        var food = new Food { Name = input.Name.Trim(), Source = FoodSource.Custom };
+        Apply(food, input);
 
         db.Foods.Add(food);
         await db.SaveChangesAsync(ct);
         return food;
+    }
+
+    /// <summary>
+    /// Промяна на калориите/макросите на съществуваща храна (включително вградените),
+    /// за да ги напаснете спрямо етикета или собствената рецепта. Записите в дневника се преизчисляват автоматично.
+    /// </summary>
+    public async Task<Food?> UpdateAsync(int id, NewFood input, CancellationToken ct = default)
+    {
+        Validate(input);
+
+        var food = await db.Foods.FindAsync([id], ct);
+        if (food is null) return null;
+
+        Apply(food, input);
+        await db.SaveChangesAsync(ct);
+        return food;
+    }
+
+    /// <summary>Търси онлайн (OpenFoodFacts, USDA). Резултатите още не са записани локално (Id = 0).</summary>
+    public async Task<IReadOnlyList<Food>> SearchOnlineAsync(string query, CancellationToken ct = default)
+    {
+        query = query.Trim();
+        if (query.Length < 2 || onlineSearches is null) return [];
+
+        var tasks = onlineSearches.Select(async s =>
+        {
+            try { return await s.SearchAsync(query, ct); }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+            {
+                return (IReadOnlyList<Food>)[];
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        return results.SelectMany(r => r)
+            .DistinctBy(f => (f.Name.ToLowerInvariant(), f.Brand?.ToLowerInvariant(), Math.Round(f.Calories)))
+            .ToList();
+    }
+
+    /// <summary>Записва храна от онлайн търсене или AI в локалната база, за да може да се логне и да работи офлайн.</summary>
+    public async Task<Food> SaveExternalAsync(Food food, CancellationToken ct = default)
+    {
+        if (food.Id != 0) return food;
+
+        if (!string.IsNullOrWhiteSpace(food.Barcode))
+        {
+            var existing = await db.Foods.FirstOrDefaultAsync(f => f.Barcode == food.Barcode, ct);
+            if (existing is not null) return existing;
+        }
+
+        var copy = new Food
+        {
+            Name = food.Name.Length > 200 ? food.Name[..200] : food.Name,
+            Brand = food.Brand?.Length > 200 ? food.Brand[..200] : food.Brand,
+            Barcode = food.Barcode,
+            Calories = food.Calories,
+            Protein = food.Protein,
+            Carbs = food.Carbs,
+            Fat = food.Fat,
+            Fiber = food.Fiber,
+            DefaultServingGrams = food.DefaultServingGrams > 0 ? food.DefaultServingGrams : 100,
+            Source = food.Source
+        };
+
+        db.Foods.Add(copy);
+        await db.SaveChangesAsync(ct);
+        return copy;
+    }
+
+    private static void Apply(Food food, NewFood input)
+    {
+        food.Name = input.Name.Trim();
+        food.Brand = string.IsNullOrWhiteSpace(input.Brand) ? null : input.Brand.Trim();
+        food.Barcode = string.IsNullOrWhiteSpace(input.Barcode) ? null : input.Barcode.Trim();
+        food.Calories = input.Calories;
+        food.Protein = input.Protein;
+        food.Carbs = input.Carbs;
+        food.Fat = input.Fat;
+        food.Fiber = input.Fiber;
+        food.DefaultServingGrams = input.DefaultServingGrams;
     }
 
     private static void Validate(NewFood input)

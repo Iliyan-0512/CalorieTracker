@@ -80,6 +80,42 @@ public partial class DiaryViewModel(CoreServices core) : ObservableObject
         await AddFoodAsync(meal);
     }
 
+    /// <summary>Бърза промяна на дневната цел за калории директно от дневника.</summary>
+    [RelayCommand]
+    private async Task EditTargetAsync()
+    {
+        var input = await Shell.Current.DisplayPromptAsync("Дневна цел",
+            "Въведете желаните калории за ден. Оставете празно за автоматично изчисление.",
+            accept: "Запази", cancel: "Отказ", initialValue: TargetText, keyboard: Keyboard.Numeric);
+        if (input is null) return;
+
+        double? target = null;
+        if (!string.IsNullOrWhiteSpace(input))
+        {
+            if (!Labels.TryParseNumber(input, out var kcal))
+            {
+                await Shell.Current.DisplayAlertAsync("Грешка", "Въведете число.", "OK");
+                return;
+            }
+            target = kcal;
+        }
+
+        try
+        {
+            await core.RunAsync<ProfileService>(async s =>
+            {
+                var profile = await s.GetAsync();
+                profile.CalorieTargetOverride = target;
+                await s.SaveAsync(profile);
+            });
+            await LoadAsync();
+        }
+        catch (ArgumentException ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Грешка", ex.Message, "OK");
+        }
+    }
+
     [RelayCommand]
     private async Task EditEntryAsync(EntryItem entry)
     {

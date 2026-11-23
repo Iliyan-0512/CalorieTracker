@@ -10,5 +10,7 @@ public partial class AppShell : Shell
 
         Routing.RegisterRoute(nameof(AddFoodPage), typeof(AddFoodPage));
         Routing.RegisterRoute(nameof(CustomFoodPage), typeof(CustomFoodPage));
+        Routing.RegisterRoute(nameof(ScanBarcodePage), typeof(ScanBarcodePage));
+        Routing.RegisterRoute(nameof(AiFoodPage), typeof(AiFoodPage));
     }
 }

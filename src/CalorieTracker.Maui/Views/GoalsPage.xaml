@@ -77,6 +77,22 @@
 
             <Button Text="Запази целите" Command="{Binding SaveCommand}" />
 
+            <!-- AI -->
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="AI (Claude)" Style="{StaticResource SectionTitle}" />
+                    <Label Text="За оценка на храни по описание и по снимка. Нужен е Anthropic API ключ от console.anthropic.com – заявките се таксуват по профила ви там."
+                           Style="{StaticResource Caption}" />
+                    <Entry Text="{Binding ApiKeyInput}" IsPassword="True" Placeholder="sk-ant-…" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Button Text="Запази ключа" Command="{Binding SaveApiKeyCommand}" />
+                        <Button Grid.Column="1" Text="Премахни" Command="{Binding RemoveApiKeyCommand}"
+                                Style="{StaticResource SecondaryButton}" IsEnabled="{Binding HasApiKey}" />
+                    </Grid>
+                    <Label Text="{Binding AiStatus}" Style="{StaticResource Caption}" />
+                </VerticalStackLayout>
+            </Border>
+
             <!-- Тема -->
             <Border Style="{StaticResource Card}">
                 <Grid ColumnDefinitions="*,Auto">

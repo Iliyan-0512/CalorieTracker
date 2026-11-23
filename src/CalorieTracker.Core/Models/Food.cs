@@ -28,5 +28,7 @@ public enum FoodSource
 {
     Builtin,
     Custom,
-    OpenFoodFacts
+    OpenFoodFacts,
+    Usda,
+    AiEstimate
 }

@@ -9,7 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddCalorieTracker(
-    builder.Configuration.GetConnectionString("Default") ?? "Data Source=calorietracker.db");
+    builder.Configuration.GetConnectionString("Default") ?? "Data Source=calorietracker.db",
+    builder.Configuration["Usda:ApiKey"]);
+builder.Services.AddSingleton<IAiKeyProvider, ConfigurationAiKeyProvider>();
 
 var app = builder.Build();
 
@@ -48,6 +50,35 @@ foods.MapPost("/", async (NewFood input, FoodService service, CancellationToken 
     var food = await service.AddCustomAsync(input, ct);
     return Results.Created($"/api/foods/{food.Id}", food);
 });
+
+foods.MapPut("/{id:int}", async (int id, NewFood input, FoodService service, CancellationToken ct) =>
+    await service.UpdateAsync(id, input, ct) is { } food ? Results.Ok(food) : Results.NotFound());
+
+foods.MapGet("/online", (string search, FoodService service, CancellationToken ct) =>
+    service.SearchOnlineAsync(search, ct));
+
+// Записва храна от онлайн търсене / AI в локалната база
+foods.MapPost("/import", async (Food food, FoodService service, CancellationToken ct) =>
+{
+    food.Id = 0;
+    var saved = await service.SaveExternalAsync(food, ct);
+    return Results.Created($"/api/foods/{saved.Id}", saved);
+});
+
+// ---- AI оценка ----
+var ai = api.MapGroup("/ai").WithTags("AI");
+
+ai.MapPost("/estimate", (AiTextRequest request, IFoodAiEstimator estimator, CancellationToken ct) =>
+    estimator.EstimateFromTextAsync(request.Text, ct));
+
+ai.MapPost("/photo", async (IFormFile photo, string? hint, IFoodAiEstimator estimator, CancellationToken ct) =>
+{
+    if (photo.Length > 5 * 1024 * 1024) return Results.Problem("Снимката трябва да е до 5 MB.", statusCode: 400);
+
+    using var ms = new MemoryStream();
+    await photo.CopyToAsync(ms, ct);
+    return Results.Ok(await estimator.EstimateFromPhotoAsync(ms.ToArray(), photo.ContentType, hint, ct));
+}).DisableAntiforgery();
 
 // ---- Дневник (хранения) ----
 var meals = api.MapGroup("/meals").WithTags("Meals");
@@ -99,6 +130,8 @@ app.Run();
 public record LogMealRequest(DateOnly Date, MealType MealType, int FoodId, double Grams);
 
 public record UpdateMealRequest(double Grams);
+
+public record AiTextRequest(string Text);
 
 public record LogWeightRequest(DateOnly Date, double WeightKg);
 

@@ -11,15 +11,25 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16,8" RowSpacing="10">
 
         <!-- Търсене -->
-        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <SearchBar Placeholder="Търси храна…" Text="{Binding SearchText}" />
-            <Picker Grid.Column="1" ItemsSource="{Binding MealTypes}" SelectedIndex="{Binding MealIndex}"
-                    WidthRequest="120" Title="Хранене" />
-        </Grid>
+        <VerticalStackLayout Spacing="8">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <SearchBar Placeholder="Търси храна…" Text="{Binding SearchText}" SearchCommand="{Binding SearchOnlineCommand}" />
+                <Picker Grid.Column="1" ItemsSource="{Binding MealTypes}" SelectedIndex="{Binding MealIndex}"
+                        WidthRequest="120" Title="Хранене" />
+            </Grid>
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Button Text="Онлайн" Command="{Binding SearchOnlineCommand}" Style="{StaticResource SecondaryButton}"
+                        SemanticProperties.Hint="Търси в OpenFoodFacts и USDA" />
+                <Button Grid.Column="1" Text="AI / снимка" Command="{Binding AiCommand}" Style="{StaticResource SecondaryButton}"
+                        SemanticProperties.Hint="Оценка с изкуствен интелект по текст или снимка" />
+                <Button Grid.Column="2" Text="Скенер" Command="{Binding ScanCommand}" Style="{StaticResource SecondaryButton}"
+                        SemanticProperties.Hint="Сканирай баркод с камерата" />
+            </Grid>
+        </VerticalStackLayout>
 
-        <!-- Баркод -->
+        <!-- Баркод на ръка и нова храна -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-            <Entry Placeholder="Баркод (EAN)" Keyboard="Numeric" Text="{Binding Barcode}"
+            <Entry Placeholder="или въведи баркод" Keyboard="Numeric" Text="{Binding Barcode}"
                    ReturnCommand="{Binding LookupBarcodeCommand}" />
             <Button Grid.Column="1" Text="Търси" Command="{Binding LookupBarcodeCommand}" Style="{StaticResource SecondaryButton}" />
             <Button Grid.Column="2" Text="Нова" Command="{Binding NewFoodCommand}" Style="{StaticResource SecondaryButton}" />
@@ -50,6 +60,8 @@
                                         </FormattedString>
                                     </Label.FormattedText>
                                 </Label>
+                                <Label Text="{Binding Source, Converter={StaticResource FoodSourceText}}" FontSize="11"
+                                       TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
                             </VerticalStackLayout>
                             <Label Grid.Column="1" Text="{Binding Calories, StringFormat='{0:0} kcal'}" VerticalOptions="Center" />
                         </Grid>
@@ -61,9 +73,13 @@
         <!-- Избрана храна -->
         <Border Grid.Row="3" Style="{StaticResource Card}" IsVisible="{Binding IsFoodSelected}" Margin="0,0,0,8">
             <VerticalStackLayout Spacing="8">
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                     <Label Text="{Binding SelectedFood.Name, x:DataType=vm:AddFoodViewModel}" Style="{StaticResource SectionTitle}" />
-                    <Button Grid.Column="1" Text="✕" Padding="0" WidthRequest="36" HeightRequest="36"
+                    <Button Grid.Column="1" Text="Редактирай" Padding="10,0" HeightRequest="36"
+                            Style="{StaticResource SecondaryButton}" Command="{Binding EditSelectedCommand}"
+                            IsVisible="{Binding CanEditSelected}"
+                            SemanticProperties.Hint="Промени калориите и макросите на тази храна" />
+                    <Button Grid.Column="2" Text="✕" Padding="0" WidthRequest="36" HeightRequest="36"
                             Style="{StaticResource SecondaryButton}" Command="{Binding ClearSelectionCommand}" />
                 </Grid>
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">

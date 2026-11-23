@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CalorieTracker.Tests;
 
@@ -102,6 +103,48 @@ public class ApiTests : IClassFixture<ApiTests.Factory>
         Assert.Equal(-0.8, stats.WeightChangeKg);
     }
 
+    [Fact]
+    public async Task Foods_UpdateChangesCaloriesAndRecalculatesDiary()
+    {
+        var date = new DateOnly(2024, 3, 3);
+        var created = await (await _client.PostAsJsonAsync("/api/foods",
+            new NewFood("Моя салата", null, null, 100, 2, 5, 8, 2), Json)).Content.ReadFromJsonAsync<Food>(Json);
+        await _client.PostAsJsonAsync("/api/meals", new LogMealRequest(date, MealType.Lunch, created!.Id, 200), Json);
+
+        var update = await _client.PutAsJsonAsync($"/api/foods/{created.Id}",
+            new NewFood("Моя салата", null, null, 150, 2, 5, 12, 2), Json);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        var summary = await _client.GetFromJsonAsync<DailySummary>($"/api/meals?date={date:yyyy-MM-dd}", Json);
+        Assert.Equal(300, summary!.Consumed.Calories);
+
+        var missing = await _client.PutAsJsonAsync("/api/foods/999999", new NewFood("X", null, null, 1, 0, 0, 0, 0), Json);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    [Fact]
+    public async Task Foods_OnlineSearchDeduplicatesAndImportSavesOnce()
+    {
+        var online = await _client.GetFromJsonAsync<List<Food>>("/api/foods/online?search=вафла", Json);
+        var food = Assert.Single(online!);
+        Assert.Equal(0, food.Id);
+
+        var first = await (await _client.PostAsJsonAsync("/api/foods/import", food, Json)).Content.ReadFromJsonAsync<Food>(Json);
+        var second = await (await _client.PostAsJsonAsync("/api/foods/import", food, Json)).Content.ReadFromJsonAsync<Food>(Json);
+        Assert.NotEqual(0, first!.Id);
+        Assert.Equal(first.Id, second!.Id);
+    }
+
+    [Fact]
+    public async Task Ai_EstimateReturnsItems()
+    {
+        var response = await _client.PostAsJsonAsync("/api/ai/estimate", new AiTextRequest("мусака 300 г"), Json);
+        var items = await response.Content.ReadFromJsonAsync<List<AiFoodEstimate>>(Json);
+        var item = Assert.Single(items!);
+        Assert.Equal(300, item.Grams);
+        Assert.Equal(540, item.ToFood().ForGrams(item.Grams).Calories);
+    }
+
     public class Factory : WebApplicationFactory<Program>
     {
         private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"calorietracker-test-{Guid.NewGuid():N}.db");
@@ -110,7 +153,15 @@ public class ApiTests : IClassFixture<ApiTests.Factory>
         {
             builder.UseSetting("ConnectionStrings:Default", $"Data Source={_dbPath}");
             builder.ConfigureTestServices(services =>
-                services.AddSingleton<IBarcodeLookup, FakeBarcodeLookup>());
+            {
+                // Тестовете не трябва да ходят в интернет или да харчат AI заявки
+                services.RemoveAll<IBarcodeLookup>();
+                services.RemoveAll<IOnlineFoodSearch>();
+                services.RemoveAll<IFoodAiEstimator>();
+                services.AddSingleton<IBarcodeLookup, FakeBarcodeLookup>();
+                services.AddSingleton<IOnlineFoodSearch, FakeOnlineSearch>();
+                services.AddSingleton<IFoodAiEstimator, FakeAiEstimator>();
+            });
         }
 
         protected override void Dispose(bool disposing)
@@ -119,6 +170,27 @@ public class ApiTests : IClassFixture<ApiTests.Factory>
             SqliteConnection.ClearAllPools();
             File.Delete(_dbPath);
         }
+    }
+
+    private class FakeOnlineSearch : IOnlineFoodSearch
+    {
+        public Task<IReadOnlyList<Food>> SearchAsync(string query, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<Food>>(
+            [
+                new Food { Name = $"Онлайн {query}", Barcode = "5555555555555", Calories = 250, Protein = 10, Carbs = 30, Fat = 8, Source = FoodSource.OpenFoodFacts },
+                new Food { Name = $"Онлайн {query}", Barcode = "5555555555555", Calories = 250, Protein = 10, Carbs = 30, Fat = 8, Source = FoodSource.OpenFoodFacts },
+            ]);
+    }
+
+    private class FakeAiEstimator : IFoodAiEstimator
+    {
+        public Task<bool> IsConfiguredAsync() => Task.FromResult(true);
+
+        public Task<IReadOnlyList<AiFoodEstimate>> EstimateFromTextAsync(string description, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<AiFoodEstimate>>([new AiFoodEstimate("Мусака", 300, 180, 9, 12, 10, 1.5, "medium", null)]);
+
+        public Task<IReadOnlyList<AiFoodEstimate>> EstimateFromPhotoAsync(byte[] image, string mediaType, string? hint, CancellationToken ct = default) =>
+            EstimateFromTextAsync("снимка", ct);
     }
 
     private class FakeBarcodeLookup : IBarcodeLookup

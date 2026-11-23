@@ -6,8 +6,14 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace CalorieTracker.Maui.ViewModels;
 
+/// <summary>Нова храна или редакция на съществуваща (калории и макроси по ваш вкус).</summary>
 public partial class CustomFoodViewModel(CoreServices core) : ObservableObject, IQueryAttributable
 {
+    private int? _editId;
+
+    [ObservableProperty] private string _title = "Нова храна";
+    [ObservableProperty] private string _saveText = "Запази храната";
+    [ObservableProperty] private bool _isEditing;
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _brand = "";
     [ObservableProperty] private string _barcode = "";
@@ -21,6 +27,7 @@ public partial class CustomFoodViewModel(CoreServices core) : ObservableObject, 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         if (query.TryGetValue("barcode", out var code) && code is string barcode) Barcode = barcode;
+        if (query.TryGetValue("editFoodId", out var id) && id is int foodId) _ = LoadForEditAsync(foodId);
         query.Clear();
     }
 
@@ -35,13 +42,42 @@ public partial class CustomFoodViewModel(CoreServices core) : ObservableObject, 
 
         try
         {
-            var food = await core.RunAsync<FoodService, Food>(s => s.AddCustomAsync(input));
+            var food = _editId is { } id
+                ? await core.RunAsync<FoodService, Food?>(s => s.UpdateAsync(id, input))
+                : await core.RunAsync<FoodService, Food>(s => s.AddCustomAsync(input));
+
+            if (food is null)
+            {
+                await Shell.Current.DisplayAlertAsync("Грешка", "Храната вече не съществува.", "OK");
+                return;
+            }
+
             await Shell.Current.GoToAsync("..", new Dictionary<string, object> { ["foodId"] = food.Id });
         }
         catch (ArgumentException ex)
         {
             await Shell.Current.DisplayAlertAsync("Грешка", ex.Message, "OK");
         }
+    }
+
+    private async Task LoadForEditAsync(int id)
+    {
+        var food = await core.RunAsync<FoodService, Food?>(s => s.GetAsync(id));
+        if (food is null) return;
+
+        _editId = id;
+        IsEditing = true;
+        Title = "Редакция на храна";
+        SaveText = "Запази промените";
+        Name = food.Name;
+        Brand = food.Brand ?? "";
+        Barcode = food.Barcode ?? "";
+        Calories = Labels.Number(food.Calories);
+        Protein = Labels.Number(food.Protein);
+        Carbs = Labels.Number(food.Carbs);
+        Fat = Labels.Number(food.Fat);
+        Fiber = Labels.Number(food.Fiber);
+        Serving = Labels.Number(food.DefaultServingGrams);
     }
 
     private bool TryRead(out NewFood input, out string error)

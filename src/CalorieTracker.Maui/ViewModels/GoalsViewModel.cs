@@ -36,10 +36,47 @@ public partial class GoalsViewModel : ObservableObject
     [ObservableProperty] private string _macrosText = "–";
     [ObservableProperty] private string _validationText = "";
 
-    public GoalsViewModel(CoreServices core)
+    [ObservableProperty] private string _apiKeyInput = "";
+    [ObservableProperty] private string _aiStatus = "";
+    [ObservableProperty] private bool _hasApiKey;
+
+    private readonly SecureStorageAiKeyProvider _aiKeys;
+
+    public GoalsViewModel(CoreServices core, SecureStorageAiKeyProvider aiKeys)
     {
         _core = core;
+        _aiKeys = aiKeys;
         PropertyChanged += OnAnyPropertyChanged;
+    }
+
+    [RelayCommand]
+    private async Task SaveApiKeyAsync()
+    {
+        var key = ApiKeyInput.Trim();
+        if (!key.StartsWith("sk-ant-", StringComparison.Ordinal))
+        {
+            await Shell.Current.DisplayAlertAsync("AI", "Ключът трябва да започва със „sk-ant-“. Вземете го от console.anthropic.com.", "OK");
+            return;
+        }
+
+        await _aiKeys.SaveAsync(key);
+        ApiKeyInput = "";
+        await RefreshAiStatusAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveApiKeyAsync()
+    {
+        _aiKeys.Remove();
+        await RefreshAiStatusAsync();
+    }
+
+    private async Task RefreshAiStatusAsync()
+    {
+        HasApiKey = !string.IsNullOrEmpty(await _aiKeys.GetApiKeyAsync());
+        AiStatus = HasApiKey
+            ? "Ключът е запазен на устройството. AI оценката по текст и снимка е включена."
+            : "Няма ключ – AI оценката е изключена. Останалото работи и без него.";
     }
 
     [RelayCommand]
@@ -61,6 +98,7 @@ public partial class GoalsViewModel : ObservableObject
         _loading = false;
 
         Recalculate();
+        await RefreshAiStatusAsync();
     }
 
     [RelayCommand]
@@ -89,7 +127,8 @@ public partial class GoalsViewModel : ObservableObject
     {
         // Изчисленията се обновяват веднага при промяна на полетата
         if (_loading || e.PropertyName is nameof(BmrText) or nameof(TdeeText) or nameof(TargetText)
-                or nameof(MacrosText) or nameof(ValidationText) or nameof(ThemeIndex))
+                or nameof(MacrosText) or nameof(ValidationText) or nameof(ThemeIndex)
+                or nameof(ApiKeyInput) or nameof(AiStatus) or nameof(HasApiKey))
             return;
         Recalculate();
     }

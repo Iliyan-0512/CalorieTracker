@@ -34,8 +34,12 @@
                                 <Label Text="изядени" Style="{StaticResource Caption}" HorizontalOptions="Center" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="1">
-                                <Label Text="{Binding TargetText}" Style="{StaticResource BigNumber}" />
-                                <Label Text="цел (kcal)" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding EditTargetCommand}" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Label Text="{Binding TargetText}" Style="{StaticResource BigNumber}"
+                                       TextDecorations="Underline" SemanticProperties.Hint="Докоснете, за да промените целта" />
+                                <Label Text="цел (kcal) ✎" Style="{StaticResource Caption}" HorizontalOptions="Center" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="2">
                                 <Label Text="{Binding RemainingText}" Style="{StaticResource BigNumber}">

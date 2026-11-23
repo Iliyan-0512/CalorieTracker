@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:CalorieTracker.Maui.ViewModels"
+             x:Class="CalorieTracker.Maui.Views.AiFoodPage"
+             x:DataType="vm:AiFoodViewModel"
+             Style="{StaticResource PageBackground}"
+             Title="AI оценка">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Какво ядохте?" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                        <Picker Grid.Column="1" ItemsSource="{Binding MealTypes}" SelectedIndex="{Binding MealIndex}" WidthRequest="120" />
+                    </Grid>
+                    <Editor Text="{Binding Description}" AutoSize="TextChanges" MinimumHeightRequest="60"
+                            Placeholder="напр. 2 филии с лютеница и сирене, 300 г боб чорба" />
+                    <Button Text="Оцени с AI" Command="{Binding EstimateTextCommand}" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Button Text="Снимай храната" Command="{Binding TakePhotoCommand}" Style="{StaticResource SecondaryButton}" />
+                        <Button Grid.Column="1" Text="От галерията" Command="{Binding PickPhotoCommand}" Style="{StaticResource SecondaryButton}" />
+                    </Grid>
+                    <Label Text="Текстът се ползва и като пояснение към снимката (напр. „порцията е голяма“)." Style="{StaticResource Caption}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Image Source="{Binding Photo}" HeightRequest="200" Aspect="AspectFit" IsVisible="{Binding Photo, Converter={StaticResource IsNotNull}}" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Label Text="{Binding Status}" Style="{StaticResource Caption}" HorizontalTextAlignment="Center" />
+
+            <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Items}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AiItem">
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding Name}" Style="{StaticResource SectionTitle}" />
+                                    <Label Grid.Column="1" Text="{Binding TotalText}" Style="{StaticResource SectionTitle}"
+                                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                </Grid>
+                                <Label Text="{Binding Per100g}" Style="{StaticResource Caption}" />
+                                <Label Text="{Binding ConfidenceText}" Style="{StaticResource Caption}" />
+                                <Label Text="{Binding Note}" Style="{StaticResource Caption}" FontAttributes="Italic" IsVisible="{Binding HasNote}" />
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                    <Label Text="Количество (g):" VerticalOptions="Center" />
+                                    <Entry Grid.Column="1" Keyboard="Numeric" Text="{Binding GramsText}" />
+                                    <Button Grid.Column="2" Text="Добави"
+                                            Command="{Binding AddCommand, Source={RelativeSource AncestorType={x:Type vm:AiFoodViewModel}}, x:DataType=vm:AiFoodViewModel}"
+                                            CommandParameter="{Binding .}" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Button Text="Добави всички" Command="{Binding AddAllCommand}"
+                    IsVisible="{Binding Items.Count, Converter={StaticResource MoreThanOne}}" />
+
+            <Label Text="AI стойностите са приблизителни – коригирайте количеството, ако е нужно."
+                   Style="{StaticResource Caption}" HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -21,13 +21,16 @@ public partial class AddFoodViewModel(CoreServices core) : ObservableObject, IQu
     [ObservableProperty] private bool _isBusy;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsFoodSelected))]
+    [NotifyPropertyChangedFor(nameof(IsFoodSelected), nameof(CanEditSelected))]
     private Food? _selectedFood;
 
     [ObservableProperty] private string _gramsText = "100";
     [ObservableProperty] private string _previewText = "";
 
     public bool IsFoodSelected => SelectedFood is not null;
+
+    /// <summary>Онлайн резултатите се редактират след като се запишат локално.</summary>
+    public bool CanEditSelected => SelectedFood is { Id: > 0 };
 
     public ObservableCollection<Food> Results { get; } = [];
 
@@ -36,9 +39,16 @@ public partial class AddFoodViewModel(CoreServices core) : ObservableObject, IQu
         if (query.TryGetValue("date", out var date) && date is DateOnly d) _date = d;
         if (query.TryGetValue("meal", out var meal) && meal is MealType m) MealIndex = (int)m;
 
-        // Връщане от екрана "Нова храна"
+        // Връщане от екрана "Нова храна" / "Редакция"
         if (query.TryGetValue("foodId", out var id) && id is int foodId)
             _ = SelectByIdAsync(foodId);
+
+        // Връщане от скенера
+        if (query.TryGetValue("scannedBarcode", out var code) && code is string barcode)
+        {
+            Barcode = barcode;
+            _ = LookupBarcodeAsync();
+        }
 
         query.Clear();
     }
@@ -78,6 +88,45 @@ public partial class AddFoodViewModel(CoreServices core) : ObservableObject, IQu
     private void ClearSelection() => SelectedFood = null;
 
     [RelayCommand]
+    private async Task SearchOnlineAsync()
+    {
+        var query = SearchText.Trim();
+        if (query.Length < 2)
+        {
+            await Shell.Current.DisplayAlertAsync("Търсене", "Въведете поне 2 букви в полето за търсене.", "OK");
+            return;
+        }
+
+        _searchCts?.Cancel();
+        IsBusy = true;
+        try
+        {
+            var foods = await core.RunAsync<FoodService, IReadOnlyList<Food>>(s => s.SearchOnlineAsync(query));
+            Results.Clear();
+            foreach (var food in foods) Results.Add(food);
+            ListHeader = foods.Count > 0
+                ? $"Онлайн: {foods.Count} резултата (OpenFoodFacts, USDA)"
+                : "Няма онлайн резултати (или няма интернет) – опитайте AI";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private Task ScanAsync() => Shell.Current.GoToAsync(nameof(Views.ScanBarcodePage));
+
+    [RelayCommand]
+    private Task AiAsync() =>
+        Shell.Current.GoToAsync(nameof(Views.AiFoodPage), new Dictionary<string, object>
+        {
+            ["date"] = _date,
+            ["meal"] = MealIndex,
+            ["text"] = SearchText.Trim()
+        });
+
+    [RelayCommand]
     private async Task LookupBarcodeAsync()
     {
         var code = Barcode.Trim();
@@ -108,6 +157,12 @@ public partial class AddFoodViewModel(CoreServices core) : ObservableObject, IQu
         Shell.Current.GoToAsync(nameof(Views.CustomFoodPage), new Dictionary<string, object> { ["barcode"] = Barcode.Trim() });
 
     [RelayCommand]
+    private Task EditSelectedAsync() =>
+        SelectedFood is { Id: > 0 } food
+            ? Shell.Current.GoToAsync(nameof(Views.CustomFoodPage), new Dictionary<string, object> { ["editFoodId"] = food.Id })
+            : Task.CompletedTask;
+
+    [RelayCommand]
     private async Task AddAsync()
     {
         if (SelectedFood is not { } food) return;
@@ -118,13 +173,19 @@ public partial class AddFoodViewModel(CoreServices core) : ObservableObject, IQu
             return;
         }
 
+        // Храна от онлайн търсене първо се записва локално
+        if (food.Id == 0)
+            food = await core.RunAsync<FoodService, Food>(s => s.SaveExternalAsync(food));
+
         await core.RunAsync<DiaryService, MealEntry>(s => s.AddEntryAsync(_date, (MealType)MealIndex, food.Id, grams));
         await Shell.Current.GoToAsync("..");
     }
 
     private async Task SelectByIdAsync(int id)
     {
+        SelectedFood = null; // за да се опреснят стойностите след редакция
         SelectedFood = await core.RunAsync<FoodService, Food?>(s => s.GetAsync(id));
+        await RunSearchAsync(SearchText, CancellationToken.None);
     }
 
     private async Task RunSearchAsync(string query, CancellationToken token)
@@ -140,7 +201,9 @@ public partial class AddFoodViewModel(CoreServices core) : ObservableObject, IQu
         else
         {
             foods = await core.RunAsync<FoodService, IReadOnlyList<Food>>(s => s.SearchAsync(query));
-            ListHeader = foods.Count > 0 ? "Резултати" : "Няма резултати – добавете своя храна";
+            ListHeader = foods.Count > 0
+                ? "В моята база – не е това? Натиснете „Онлайн“ или „AI“"
+                : "Няма в моята база – натиснете „Онлайн“ или „AI“";
         }
 
         if (token.IsCancellationRequested) return;

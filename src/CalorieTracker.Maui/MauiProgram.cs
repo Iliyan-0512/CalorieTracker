@@ -2,7 +2,9 @@ using CalorieTracker.Core;
 using CalorieTracker.Maui.Services;
 using CalorieTracker.Maui.ViewModels;
 using CalorieTracker.Maui.Views;
+using CalorieTracker.Core.Services;
 using Microsoft.Extensions.Logging;
+using ZXing.Net.Maui.Controls;
 
 namespace CalorieTracker.Maui;
 
@@ -13,6 +15,7 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
+			.UseBarcodeReader()
 			.ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -23,6 +26,8 @@ public static class MauiProgram
 		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "calorietracker.db");
 		builder.Services.AddCalorieTracker($"Data Source={dbPath}");
 		builder.Services.AddSingleton<CoreServices>();
+		builder.Services.AddSingleton<SecureStorageAiKeyProvider>();
+		builder.Services.AddSingleton<IAiKeyProvider>(sp => sp.GetRequiredService<SecureStorageAiKeyProvider>());
 
 		builder.Services.AddTransient<DiaryViewModel>();
 		builder.Services.AddTransient<AddFoodViewModel>();
@@ -35,6 +40,9 @@ public static class MauiProgram
 		builder.Services.AddTransient<CustomFoodPage>();
 		builder.Services.AddTransient<GoalsPage>();
 		builder.Services.AddTransient<ProgressPage>();
+		builder.Services.AddTransient<AiFoodViewModel>();
+		builder.Services.AddTransient<AiFoodPage>();
+		builder.Services.AddTransient<ScanBarcodePage>();
 
 #if DEBUG
 		builder.Logging.AddDebug();

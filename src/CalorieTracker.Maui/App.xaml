@@ -1,4 +1,5 @@
 ﻿<Application xmlns:local="clr-namespace:CalorieTracker.Maui"
+             xmlns:services="clr-namespace:CalorieTracker.Maui.Services"
              x:Class="CalorieTracker.Maui.App">
     <Application.Resources>
         <ResourceDictionary>
@@ -6,6 +7,10 @@
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <services:IsNotNullConverter x:Key="IsNotNull" />
+            <services:MoreThanOneConverter x:Key="MoreThanOne" />
+            <services:FoodSourceConverter x:Key="FoodSourceText" />
 
             <Color x:Key="Danger">#D84343</Color>
             <Color x:Key="DangerDark">#FF8A80</Color>
