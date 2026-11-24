@@ -30,12 +30,18 @@
 
 ### AI (Claude)
 
-AI оценката ползва модела `claude-opus-5-5` чрез официалния [Anthropic .NET SDK](https://www.nuget.org/packages/Anthropic)
-със structured outputs (връща строг JSON) и server-side fallback при отказ. Нужен е ваш API ключ от
+AI оценката ползва Claude чрез официалния [Anthropic .NET SDK](https://www.nuget.org/packages/Anthropic)
+със structured outputs (връща строг JSON). Нужен е ваш API ключ от
 [console.anthropic.com](https://console.anthropic.com) – заявките се таксуват по вашия профил.
 
-- **Мобилно приложение**: „Цели“ → „AI (Claude)“ → поставете ключа. Пази се в защитеното хранилище на устройството.
-- **API**: `dotnet user-secrets set "Anthropic:ApiKey" "sk-ant-..." --project src/CalorieTracker.Api` (или променлива `ANTHROPIC_API_KEY`).
+| Модел | Приблизителна цена на заявка | Бележка |
+|---|---|---|
+| `claude-haiku-5-5` (по подразбиране) | ~0.1 ¢ | Най-евтин, достатъчен за повечето храни |
+| `claude-sonnet-5-5` | ~1–1.5 ¢ | По-точен при сложни ястия; резервен модел при отказ |
+| `claude-opus-5-5` | ~2–3 ¢ | Най-точен; резервен модел при отказ |
+
+- **Мобилно приложение**: „Цели“ → „AI (Claude)“ → поставете ключа и изберете модел. Ключът се пази в защитеното хранилище на устройството.
+- **API**: `dotnet user-secrets set "Anthropic:ApiKey" "sk-ant-..." --project src/CalorieTracker.Api` (или променлива `ANTHROPIC_API_KEY`); моделът се сменя с `Anthropic:Model`.
 
 Без ключ всичко останало работи нормално.
 

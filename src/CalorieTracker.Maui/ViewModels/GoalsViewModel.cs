@@ -36,6 +36,9 @@ public partial class GoalsViewModel : ObservableObject
     [ObservableProperty] private string _macrosText = "–";
     [ObservableProperty] private string _validationText = "";
 
+    public IReadOnlyList<string> AiModels { get; } = ClaudeFoodEstimator.Models.Select(m => m.Label).ToList();
+
+    [ObservableProperty] private int _aiModelIndex;
     [ObservableProperty] private string _apiKeyInput = "";
     [ObservableProperty] private string _aiStatus = "";
     [ObservableProperty] private bool _hasApiKey;
@@ -71,8 +74,15 @@ public partial class GoalsViewModel : ObservableObject
         await RefreshAiStatusAsync();
     }
 
+    partial void OnAiModelIndexChanged(int value)
+    {
+        if (value >= 0 && value < ClaudeFoodEstimator.Models.Count)
+            _aiKeys.Model = ClaudeFoodEstimator.Models[value].Id;
+    }
+
     private async Task RefreshAiStatusAsync()
     {
+        AiModelIndex = Math.Max(0, ClaudeFoodEstimator.Models.ToList().FindIndex(m => m.Id == _aiKeys.Model));
         HasApiKey = !string.IsNullOrEmpty(await _aiKeys.GetApiKeyAsync());
         AiStatus = HasApiKey
             ? "Ключът е запазен на устройството. AI оценката по текст и снимка е включена."
@@ -128,7 +138,7 @@ public partial class GoalsViewModel : ObservableObject
         // Изчисленията се обновяват веднага при промяна на полетата
         if (_loading || e.PropertyName is nameof(BmrText) or nameof(TdeeText) or nameof(TargetText)
                 or nameof(MacrosText) or nameof(ValidationText) or nameof(ThemeIndex)
-                or nameof(ApiKeyInput) or nameof(AiStatus) or nameof(HasApiKey))
+                or nameof(ApiKeyInput) or nameof(AiStatus) or nameof(HasApiKey) or nameof(AiModelIndex))
             return;
         Recalculate();
     }

@@ -47,12 +47,25 @@ public interface IFoodAiEstimator
 public interface IAiKeyProvider
 {
     Task<string?> GetApiKeyAsync();
+
+    /// <summary>Кой модел на Claude да се ползва (вижте ClaudeFoodEstimator.Models).</summary>
+    Task<string> GetModelAsync() => Task.FromResult(ClaudeFoodEstimator.DefaultModel);
 }
+
+public record AiModelOption(string Id, string Label);
 
 /// <summary>Оценява калории и макроси с Claude – за храни, които ги няма в базата, и по снимка на чинията.</summary>
 public class ClaudeFoodEstimator(IAiKeyProvider keys) : IFoodAiEstimator
 {
-    public const string Model = "claude-opus-5-5";
+    /// <summary>Haiku е десетки пъти по-евтин и напълно достатъчен за оценка на храна.</summary>
+    public const string DefaultModel = "claude-haiku-5-5";
+
+    public static IReadOnlyList<AiModelOption> Models { get; } =
+    [
+        new("claude-haiku-5-5", "Haiku 5.5 – най-евтин (~0.1 ¢ на заявка)"),
+        new("claude-sonnet-5-5", "Sonnet 5.5 – по-точен (~1–1.5 ¢)"),
+        new("claude-opus-5-5", "Opus 5.5 – най-точен (~2–3 ¢)")
+    ];
 
     private const string SystemPrompt = """
         Ти си диетолог, който оценява хранителни стойности за приложение за броене на калории.
@@ -131,26 +144,39 @@ public class ClaudeFoodEstimator(IAiKeyProvider keys) : IFoodAiEstimator
         var apiKey = await keys.GetApiKeyAsync();
         if (string.IsNullOrWhiteSpace(apiKey)) throw new AiNotConfiguredException();
 
+        var model = await keys.GetModelAsync();
+        if (Models.All(m => m.Id != model)) model = DefaultModel;
+
         var client = new AnthropicClient { ApiKey = apiKey };
+
+        var parameters = new MessageCreateParams
+        {
+            Model = model,
+            MaxTokens = 16000,
+            System = SystemPrompt,
+            OutputConfig = new BetaOutputConfig
+            {
+                Effort = Effort.Medium,
+                Format = new BetaJsonOutputFormat { Schema = Schema }
+            },
+            Messages = [new BetaUserMessageParam { Content = content }]
+        };
+
+        // При отказ от класификатора за безопасност Opus/Sonnet автоматично се обслужват от резервен модел.
+        // Haiku 5.5 няма такъв резервен вариант – там просто показваме съобщение за отказ.
+        if (model != "claude-haiku-5-5")
+        {
+            parameters = parameters with
+            {
+                Betas = [AnthropicBeta.ServerSideFallback2026_07_01],
+                Fallbacks = new Default()
+            };
+        }
 
         BetaMessage response;
         try
         {
-            response = await client.Beta.Messages.Create(new MessageCreateParams
-            {
-                Model = Model,
-                MaxTokens = 16000,
-                // При отказ от класификатора за безопасност заявката автоматично се обслужва от резервен модел
-                Betas = [AnthropicBeta.ServerSideFallback2026_07_01],
-                Fallbacks = new Default(),
-                System = SystemPrompt,
-                OutputConfig = new BetaOutputConfig
-                {
-                    Effort = Effort.Medium,
-                    Format = new BetaJsonOutputFormat { Schema = Schema }
-                },
-                Messages = [new BetaUserMessageParam { Content = content }]
-            }, ct);
+            response = await client.Beta.Messages.Create(parameters, ct);
         }
         catch (AnthropicApiException ex)
         {

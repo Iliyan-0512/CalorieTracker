@@ -90,6 +90,8 @@
                                 Style="{StaticResource SecondaryButton}" IsEnabled="{Binding HasApiKey}" />
                     </Grid>
                     <Label Text="{Binding AiStatus}" Style="{StaticResource Caption}" />
+                    <Label Text="Модел" Style="{StaticResource FieldLabel}" />
+                    <Picker ItemsSource="{Binding AiModels}" SelectedIndex="{Binding AiModelIndex}" />
                 </VerticalStackLayout>
             </Border>
 
